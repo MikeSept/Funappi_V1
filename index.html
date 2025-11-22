@@ -1,827 +1,821 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-
-// --- ESTILOS GLOBALES E INYECCIÓN DE FUENTES ---
-const GlobalStyles = () => (
-  <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap');
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funappi - Constructive Feedback Loop</title>
     
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #F8F8F8;
-      color: #333333;
-      margin: 0;
-      padding: 0;
-    }
+    <!-- 1. Cargar Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    .font-heading {
-      font-family: 'Montserrat', sans-serif;
-    }
-    
-    .text-gradient {
-      background: linear-gradient(to right, #FF6B6B, #6A4C93);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    
-    .bg-gradient-brand {
-      background: linear-gradient(135deg, #FF6B6B 0%, #6A4C93 100%);
-    }
-    
-    .shadow-glow {
-      box-shadow: 0 10px 25px -5px rgba(106, 76, 147, 0.2);
-    }
+    <!-- 2. Cargar Fuentes Google -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap" rel="stylesheet">
 
-    @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .animate-fade-in-up {
-      animation: fade-in-up 0.6s ease-out forwards;
-    }
+    <!-- 3. Configuración de Tailwind para colores personalizados -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            orange: '#FF6B6B',
+                            purple: '#6A4C93',
+                            green: '#5BE2B3',
+                            blue: '#00BFFF',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 
-    /* Utilidades de scroll suave */
-    html {
-      scroll-behavior: smooth;
-    }
-  `}</style>
-);
+    <!-- 4. Cargar React y Babel (Para que funcione el código JSX directamente en el navegador) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-// --- ICONOS SVG (Sistema de Diseño Funappi) ---
+    <style>
+        /* Estilos base adicionales */
+        body {
+            background-color: #F8F8F8;
+            color: #333333;
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #FF6B6B, #6A4C93);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .bg-gradient-brand {
+            background: linear-gradient(135deg, #FF6B6B 0%, #6A4C93 100%);
+        }
+        .shadow-glow {
+            box-shadow: 0 10px 25px -5px rgba(106, 76, 147, 0.2);
+        }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor Raíz de React -->
+    <div id="root"></div>
 
-const FunappiLogo = ({ className = 'w-10 h-10', idSuffix = '1' }) => (
-  <svg viewBox="0 0 100 60" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id={`funappiGradient-${idSuffix}`} x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="#FF6B35" />
-        <stop offset="100%" stopColor="#8B5CF6" />
-      </linearGradient>
-    </defs>
-    <path d="M30 10 C15 10 5 20 5 35 C5 45 15 50 20 50 L20 58 L35 50 C45 50 55 40 55 35" stroke={`url(#funappiGradient-${idSuffix})`} strokeWidth="6" strokeLinecap="round" fill="none" />
-    <path d="M70 10 C85 10 95 20 95 35 C95 50 85 55 70 55 C55 55 45 45 45 35 C45 20 55 10 70 10 Z" stroke={`url(#funappiGradient-${idSuffix})`} strokeWidth="6" strokeLinecap="round" fill="none" />
-    <path d="M60 35 Q70 45 80 35" stroke={`url(#funappiGradient-${idSuffix})`} strokeWidth="4" strokeLinecap="round" />
-  </svg>
-);
+    <!-- 5. Tu Aplicación React Completa -->
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
 
-const StarIcon = ({ className = 'w-6 h-6', fill = 'none' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} fill={fill}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.31h5.367a.563.563 0 01.321.988l-4.318 3.138a.563.563 0 00-.182.523l1.636 5.028a.563.563 0 01-.81.62l-4.796-2.512a.563.563 0 00-.527 0l-4.796 2.512a.563.563 0 01-.81-.62l1.636-5.028a.563.563 0 00-.182-.523L2.498 9.908a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.31L11.48 3.5z" />
-  </svg>
-);
+        // --- ICONOS SVG ---
+        const FunappiLogo = ({ className = 'w-10 h-10', idSuffix = '1' }) => (
+            <svg viewBox="0 0 100 60" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                <linearGradient id={`funappiGradient-${idSuffix}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#FF6B35" />
+                    <stop offset="100%" stopColor="#8B5CF6" />
+                </linearGradient>
+                </defs>
+                <path d="M30 10 C15 10 5 20 5 35 C5 45 15 50 20 50 L20 58 L35 50 C45 50 55 40 55 35" stroke={`url(#funappiGradient-${idSuffix})`} strokeWidth="6" strokeLinecap="round" fill="none" />
+                <path d="M70 10 C85 10 95 20 95 35 C95 50 85 55 70 55 C55 55 45 45 45 35 C45 20 55 10 70 10 Z" stroke={`url(#funappiGradient-${idSuffix})`} strokeWidth="6" strokeLinecap="round" fill="none" />
+                <path d="M60 35 Q70 45 80 35" stroke={`url(#funappiGradient-${idSuffix})`} strokeWidth="4" strokeLinecap="round" />
+            </svg>
+        );
 
-const UserIcon = ({ className = 'w-6 h-6' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zM6.023 16.09A7.48 7.48 0 0112 14.25a7.48 7.48 0 015.977 1.84c-.896.246-1.823.38-2.777.38H8.8c-.954 0-1.88-.134-2.777-.38zM12 9a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" clipRule="evenodd" />
-  </svg>
-);
+        const StarIcon = ({ className = 'w-6 h-6', fill = 'none' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className} fill={fill}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.31h5.367a.563.563 0 01.321.988l-4.318 3.138a.563.563 0 00-.182.523l1.636 5.028a.563.563 0 01-.81.62l-4.796-2.512a.563.563 0 00-.527 0l-4.796 2.512a.563.563 0 01-.81-.62l1.636-5.028a.563.563 0 00-.182-.523L2.498 9.908a.563.563 0 01.321-.988h5.367a.563.563 0 00.475-.31L11.48 3.5z" />
+            </svg>
+        );
 
-const BuildingIcon = ({ className = 'w-6 h-6' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M4.5 3.001h15A1.5 1.5 0 0121 4.501v15a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 19.501v-15A1.5 1.5 0 014.5 3.001zM7.5 7.501A1.5 1.5 0 019 6.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H9a1.5 1.5 0 01-1.5-1.5v-1.5zM7.5 13.501A1.5 1.5 0 019 12.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H9a1.5 1.5 0 01-1.5-1.5v-1.5zm6-6A1.5 1.5 0 0115 6.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H15a1.5 1.5 0 01-1.5-1.5v-1.5zm6 6A1.5 1.5 0 0115 12.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H15a1.5 1.5 0 01-1.5-1.5v-1.5z" clipRule="evenodd" />
-  </svg>
-);
+        const UserIcon = ({ className = 'w-6 h-6' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zM6.023 16.09A7.48 7.48 0 0112 14.25a7.48 7.48 0 015.977 1.84c-.896.246-1.823.38-2.777.38H8.8c-.954 0-1.88-.134-2.777-.38zM12 9a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" clipRule="evenodd" />
+            </svg>
+        );
 
-const AlertIcon = ({ className = 'w-6 h-6' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.598 4.5H4.644C2.336 20.251.892 17.751 2.046 15.751L9.401 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
-  </svg>
-);
+        const BuildingIcon = ({ className = 'w-6 h-6' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path fillRule="evenodd" d="M4.5 3.001h15A1.5 1.5 0 0121 4.501v15a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 19.501v-15A1.5 1.5 0 014.5 3.001zM7.5 7.501A1.5 1.5 0 019 6.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H9a1.5 1.5 0 01-1.5-1.5v-1.5zM7.5 13.501A1.5 1.5 0 019 12.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H9a1.5 1.5 0 01-1.5-1.5v-1.5zm6-6A1.5 1.5 0 0115 6.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H15a1.5 1.5 0 01-1.5-1.5v-1.5zm6 6A1.5 1.5 0 0115 12.001h1.5a1.5 1.5 0 011.5 1.5v1.5a1.5 1.5 0 01-1.5 1.5H15a1.5 1.5 0 01-1.5-1.5v-1.5z" clipRule="evenodd" />
+            </svg>
+        );
 
-const TicketIcon = ({ className = 'w-6 h-6' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M1.5 6.75A2.25 2.25 0 013.75 4.5h16.5a2.25 2.25 0 012.25 2.25v10.5A2.25 2.25 0 0120.25 19.5H3.75A2.25 2.25 0 011.5 17.25V6.75zM3 6.75A.75.75 0 013.75 6h16.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75H3.75a.75.75 0 01-.75-.75V6.75zM8.25 9a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zm3.75 0a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zm3.75 0a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75z" clipRule="evenodd" />
-  </svg>
-);
+        const AlertIcon = ({ className = 'w-6 h-6' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.598 4.5H4.644C2.336 20.251.892 17.751 2.046 15.751L9.401 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+            </svg>
+        );
 
-const ChatGroupIcon = ({ className = 'w-6 h-6' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.15l-2.11 2.109a.75.75 0 01-1.06 0l-2.11-2.109a.39.39 0 00-.297-.15 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.74c0-1.947 1.37-3.68 3.348-3.97zM6.375 6.75a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H7.125a.75.75 0 01-.75-.75zM6.375 9.75a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H7.125a.75.75 0 01-.75-.75zM6.375 12.75a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H7.125a.75.75 0 01-.75-.75zM9.606 18.606a.75.75 0 01.75-.75h3.288a.75.75 0 010 1.5H10.356a.75.75 0 01-.75-.75z" clipRule="evenodd" />
-  </svg>
-);
+        const TicketIcon = ({ className = 'w-6 h-6' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path fillRule="evenodd" d="M1.5 6.75A2.25 2.25 0 013.75 4.5h16.5a2.25 2.25 0 012.25 2.25v10.5A2.25 2.25 0 0120.25 19.5H3.75A2.25 2.25 0 011.5 17.25V6.75zM3 6.75A.75.75 0 013.75 6h16.5a.75.75 0 01.75.75v10.5a.75.75 0 01-.75.75H3.75a.75.75 0 01-.75-.75V6.75zM8.25 9a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zm3.75 0a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zm3.75 0a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75z" clipRule="evenodd" />
+            </svg>
+        );
 
-// Iconos de Rubros
-const FoodIcon = ({ className = 'w-12 h-12' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M11.25 4.514V15.75h1.5V4.514a4.5 4.5 0 00-1.5 0zM12 17.25a.75.75 0 000 1.5h.008a.75.75 0 000-1.5H12z" />
-    <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM11.25 3.56a8.25 8.25 0 101.5 15.632.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75c.013.22.028.439.047.658A8.25 8.25 0 0111.25 3.56z" clipRule="evenodd" />
-  </svg>
-);
+        const ChatGroupIcon = ({ className = 'w-6 h-6' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path fillRule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.15l-2.11 2.109a.75.75 0 01-1.06 0l-2.11-2.109a.39.39 0 00-.297-.15 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.74c0-1.947 1.37-3.68 3.348-3.97zM6.375 6.75a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H7.125a.75.75 0 01-.75-.75zM6.375 9.75a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H7.125a.75.75 0 01-.75-.75zM6.375 12.75a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H7.125a.75.75 0 01-.75-.75zM9.606 18.606a.75.75 0 01.75-.75h3.288a.75.75 0 010 1.5H10.356a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+            </svg>
+        );
 
-const ShopIcon = ({ className = 'w-12 h-12' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M7.5 6v.75H5.513c-.96 0-1.763.746-1.858 1.705L3.2 18.293a1.875 1.875 0 001.858 2.107H18.94c.96 0 1.763-.746 1.858-1.705l.455-9.838A1.875 1.875 0 0018.487 6.75H16.5V6A3 3 0 0010.5 6v.75H7.5zm-3 1.5c.053-.492.474-.875.97-.875h10.053c.496 0 .917.383.97.875l.455 9.838c.053.492-.301.987-.805 1.056l-.001.001H4.328c-.504-.069-.858-.564-.805-1.056L3.5 7.5zM10.5 6A1.5 1.5 0 009 7.5v.75h6V7.5A1.5 1.5 0 0010.5 6z" clipRule="evenodd" />
-  </svg>
-);
+        const FoodIcon = ({ className = 'w-12 h-12' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path d="M11.25 4.514V15.75h1.5V4.514a4.5 4.5 0 00-1.5 0zM12 17.25a.75.75 0 000 1.5h.008a.75.75 0 000-1.5H12z" />
+                <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM11.25 3.56a8.25 8.25 0 101.5 15.632.75.75 0 00-.75-.75h-1.5a.75.75 0 00-.75.75c.013.22.028.439.047.658A8.25 8.25 0 0111.25 3.56z" clipRule="evenodd" />
+            </svg>
+        );
 
-const TransportIcon = ({ className = 'w-12 h-12' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path fillRule="evenodd" d="M3.97 3.97a.75.75 0 011.06 0l13.72 13.72a.75.75 0 11-1.06 1.06L3.97 5.03a.75.75 0 010-1.06zm14.28 0a.75.75 0 010 1.06L4.53 18.75a.75.75 0 11-1.06-1.06L18.25 3.97z" clipRule="evenodd" />
-  </svg>
-);
+        const ShopIcon = ({ className = 'w-12 h-12' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path fillRule="evenodd" d="M7.5 6v.75H5.513c-.96 0-1.763.746-1.858 1.705L3.2 18.293a1.875 1.875 0 001.858 2.107H18.94c.96 0 1.763-.746 1.858-1.705l.455-9.838A1.875 1.875 0 0018.487 6.75H16.5V6A3 3 0 0010.5 6v.75H7.5zm-3 1.5c.053-.492.474-.875.97-.875h10.053c.496 0 .917.383.97.875l.455 9.838c.053.492-.301.987-.805 1.056l-.001.001H4.328c-.504-.069-.858-.564-.805-1.056L3.5 7.5zM10.5 6A1.5 1.5 0 009 7.5v.75h6V7.5A1.5 1.5 0 0010.5 6z" clipRule="evenodd" />
+            </svg>
+        );
 
-const GlobeIcon = ({ className = 'w-12 h-12' }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM12 15a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM12 8.25a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 12a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM4.01 8.21a.75.75 0 010-1.06l3.5-3.5a.75.75 0 011.06 1.06l-3.5 3.5a.75.75 0 01-1.06 0zM19.03 16.29a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 01-1.06-1.06l3.5-3.5a.75.75 0 011.06 0zM16.29 19.03a.75.75 0 011.06 0l3.5 3.5a.75.75 0 01-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06z" />
-    <path fillRule="evenodd" d="M12 2.25C6.075 2.25 1.5 6.825 1.5 12.75s4.575 10.5 10.5 10.5 10.5-4.725 10.5-10.5S17.925 2.25 12 2.25zM3 12.75a9 9 0 1118 0 9 9 0 01-18 0z" clipRule="evenodd" />
-  </svg>
-);
+        const TransportIcon = ({ className = 'w-12 h-12' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path fillRule="evenodd" d="M3.97 3.97a.75.75 0 011.06 0l13.72 13.72a.75.75 0 11-1.06 1.06L3.97 5.03a.75.75 0 010-1.06zm14.28 0a.75.75 0 010 1.06L4.53 18.75a.75.75 0 11-1.06-1.06L18.25 3.97z" clipRule="evenodd" />
+            </svg>
+        );
 
-// --- MOCK DATA ---
-const MOCK_DATA = {
-  users: {
-    user1: { id: 'user1', name: 'Ana Consumidora', qualityScore: 4.2, reviewsCount: 5, tier: 'Plata' },
-    user2: { id: 'user2', name: 'Benjamín Crítico', qualityScore: 3.8, reviewsCount: 12, tier: 'Bronce' },
-    admin: { id: 'admin', name: 'Admin Empresa', tier: 'Admin' },
-  },
-  businesses: {
-    biz1: {
-      id: 'biz1', name: 'Restaurante El Sabor', naturaleza: 'Servicio', mercado: 'Gastronomía',
-      incentives: { 1: 'Cupón 5%', 2: 'Bebida Gratis', 3: '10% Dcto.', 4: '15% Dcto.', 5: '25% Dcto.' },
-    },
-    biz2: {
-      id: 'biz2', name: 'Tienda Rápida 24h', naturaleza: 'Producto', mercado: 'Retail',
-      incentives: { 1: 'Snack Gratis', 2: 'Snack Gratis', 3: '10% Dcto.', 4: '15% Dcto.', 5: '20% Dcto.' },
-    },
-    biz3: {
-      id: 'biz3', name: 'Zapatería El Caminante', naturaleza: 'Producto', mercado: 'Retail',
-      incentives: { 1: 'Set Limpieza', 2: 'Set Limpieza', 3: '5% Dcto.', 4: '10% Dcto.', 5: '15% Dcto.' },
-    },
-    biz4: {
-      id: 'biz4', name: 'App de Taxis Rápido', naturaleza: 'Servicio', mercado: 'Transporte',
-      incentives: { 1: '5% Dcto. viaje', 2: '10% Dcto. viaje', 3: '15% Dcto. viaje', 4: '20% Dcto. viaje', 5: 'Viaje Gratis' },
-    },
-  },
-  feedback: [
-    { id: 'fb1', userId: 'user1', businessId: 'biz2', companyRating: 1, text: 'El producto estaba vencido y el cajero fue muy grosero. Pésimo servicio.', userQualityRating: 5, status: 'resolved', incentive: 'Cupón 15% Próxima Compra', response: 'Lamentamos mucho su experiencia. Hemos revisado las cámaras y hablado con el personal. Su feedback constructivo nos ayudó a identificar un problema. Acepte este cupón.', systemMessage: null },
-    { id: 'fb2', userId: 'user1', businessId: 'biz3', companyRating: 5, text: '¡Excelente atención y productos de calidad! Me ayudaron a encontrar exactamente lo que necesitaba.', userQualityRating: 5, status: 'resolved', incentive: 'Cupón 10% Próxima Compra', response: '¡Muchas gracias por sus amables palabras! La esperamos de vuelta.', systemMessage: null },
-    { id: 'fb3', userId: 'user1', businessId: 'biz1', companyRating: 2, text: 'El plato principal (Lomo Saltado) estaba frío en el centro. El pisco sour estaba bueno, pero la comida demoró 40 minutos.', userQualityRating: null, status: 'pending', incentive: null, response: null, systemMessage: null },
-    { id: 'fb4', userId: 'user1', businessId: 'biz2', companyRating: 3, text: 'No tenían la bebida que buscaba, y el pasillo 3 estaba muy desordenado.', userQualityRating: null, status: 'pending', incentive: null, response: null, systemMessage: null },
-    { id: 'fb5', userId: 'user1', businessId: 'biz4', companyRating: 1, text: 'El conductor tomó una ruta mucho más larga y el auto olía mal. La app me cobró de más.', userQualityRating: null, status: 'pending', incentive: null, response: null, systemMessage: null },
-    { id: 'fb6', userId: 'user2', businessId: 'biz1', companyRating: 4, text: 'Muy buen ambiente, la música estaba perfecta. El ceviche un poco salado para mi gusto, pero el resto increíble.', userQualityRating: 4, status: 'resolved', incentive: '15% Dcto.', response: '¡Muchas gracias por tu feedback Benjamín! Pasaremos tu comentario sobre la sal a cocina. ¡Te esperamos!', systemMessage: null },
-  ],
-  focusGroups: [
-    { id: 'fg1', businessId: 'biz1', topic: 'Prueba de Nuevo Menú de Verano', description: 'Buscamos 10 usuarios para probar 3 platos nuevos y darnos su opinión directa. Se requiere asistir al local (Peñalolén).', incentive: 'Cena Gratis para 2 personas', status: 'open', participants: ['user1', 'admin'], chatHistory: [{ id: 'msg1', userId: 'admin', text: '¡Bienvenidos al focus group del nuevo menú! Estamos emocionados por sus ideas. ¿Qué esperan de un menú de verano?' }, { id: 'msg2', userId: 'user1', text: '¡Hola! Yo espero platos más frescos, quizás más opciones de pescado.' }] },
-    { id: 'fg2', businessId: 'biz4', topic: 'Feedback sobre la nueva App v3.0 (Beta)', description: 'Necesitamos 5 usuarios "heavy users" de apps de transporte para probar la nueva interfaz antes del lanzamiento.', incentive: '2 Viajes Gratis (hasta $5.000 c/u)', status: 'open', participants: [], chatHistory: [{ id: 'msg3', userId: 'admin', text: 'Quedan 3 cupos para este focus group. ¡El feedback será clave para la nueva versión!' }] },
-    { id: 'fg3', businessId: 'biz3', topic: 'Nuevos Colores Zapatillas Urbanas', description: 'Opinión sobre 5 nuevos colores para nuestra línea de zapatillas urbanas. (Cerrado)', incentive: '30% Dcto.', status: 'closed', participants: ['user2'], chatHistory: [] },
-  ],
-};
+        const GlobeIcon = ({ className = 'w-12 h-12' }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM12 15a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM12 8.25a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM15 12a.75.75 0 01.75-.75h3a.75.75 0 010 1.5h-3a.75.75 0 01-.75-.75zM4.01 8.21a.75.75 0 010-1.06l3.5-3.5a.75.75 0 011.06 1.06l-3.5 3.5a.75.75 0 01-1.06 0zM19.03 16.29a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 01-1.06-1.06l3.5-3.5a.75.75 0 011.06 0zM16.29 19.03a.75.75 0 011.06 0l3.5 3.5a.75.75 0 01-1.06 1.06l-3.5-3.5a.75.75 0 010-1.06z" />
+                <path fillRule="evenodd" d="M12 2.25C6.075 2.25 1.5 6.825 1.5 12.75s4.575 10.5 10.5 10.5 10.5-4.725 10.5-10.5S17.925 2.25 12 2.25zM3 12.75a9 9 0 1118 0 9 9 0 01-18 0z" clipRule="evenodd" />
+            </svg>
+        );
 
-// --- RUBROS ---
-const RUBROS_CATEGORIAS = [
-  { name: 'Gastronomía', mercado: 'Gastronomía', icon: <FoodIcon />, color: 'bg-red-500' },
-  { name: 'Retail', mercado: 'Retail', icon: <ShopIcon />, color: 'bg-blue-500' },
-  { name: 'Transporte', mercado: 'Transporte', icon: <TransportIcon />, color: 'bg-green-500' },
-  { name: 'Ver Todos', mercado: null, icon: <GlobeIcon />, color: 'bg-gray-500' },
-];
+        // --- MOCK DATA ---
+        const MOCK_DATA = {
+            users: {
+                user1: { id: 'user1', name: 'Ana Consumidora', qualityScore: 4.2, reviewsCount: 5, tier: 'Plata' },
+                user2: { id: 'user2', name: 'Benjamín Crítico', qualityScore: 3.8, reviewsCount: 12, tier: 'Bronce' },
+                admin: { id: 'admin', name: 'Admin Empresa', tier: 'Admin' },
+            },
+            businesses: {
+                biz1: {
+                id: 'biz1', name: 'Restaurante El Sabor', naturaleza: 'Servicio', mercado: 'Gastronomía',
+                incentives: { 1: 'Cupón 5%', 2: 'Bebida Gratis', 3: '10% Dcto.', 4: '15% Dcto.', 5: '25% Dcto.' },
+                },
+                biz2: {
+                id: 'biz2', name: 'Tienda Rápida 24h', naturaleza: 'Producto', mercado: 'Retail',
+                incentives: { 1: 'Snack Gratis', 2: 'Snack Gratis', 3: '10% Dcto.', 4: '15% Dcto.', 5: '20% Dcto.' },
+                },
+                biz3: {
+                id: 'biz3', name: 'Zapatería El Caminante', naturaleza: 'Producto', mercado: 'Retail',
+                incentives: { 1: 'Set Limpieza', 2: 'Set Limpieza', 3: '5% Dcto.', 4: '10% Dcto.', 5: '15% Dcto.' },
+                },
+                biz4: {
+                id: 'biz4', name: 'App de Taxis Rápido', naturaleza: 'Servicio', mercado: 'Transporte',
+                incentives: { 1: '5% Dcto. viaje', 2: '10% Dcto. viaje', 3: '15% Dcto. viaje', 4: '20% Dcto. viaje', 5: 'Viaje Gratis' },
+                },
+            },
+            feedback: [
+                { id: 'fb1', userId: 'user1', businessId: 'biz2', companyRating: 1, text: 'El producto estaba vencido y el cajero fue muy grosero. Pésimo servicio.', userQualityRating: 5, status: 'resolved', incentive: 'Cupón 15% Próxima Compra', response: 'Lamentamos mucho su experiencia. Hemos revisado las cámaras y hablado con el personal. Su feedback constructivo nos ayudó a identificar un problema. Acepte este cupón.', systemMessage: null },
+                { id: 'fb2', userId: 'user1', businessId: 'biz3', companyRating: 5, text: '¡Excelente atención y productos de calidad! Me ayudaron a encontrar exactamente lo que necesitaba.', userQualityRating: 5, status: 'resolved', incentive: 'Cupón 10% Próxima Compra', response: '¡Muchas gracias por sus amables palabras! La esperamos de vuelta.', systemMessage: null },
+                { id: 'fb3', userId: 'user1', businessId: 'biz1', companyRating: 2, text: 'El plato principal (Lomo Saltado) estaba frío en el centro. El pisco sour estaba bueno, pero la comida demoró 40 minutos.', userQualityRating: null, status: 'pending', incentive: null, response: null, systemMessage: null },
+                { id: 'fb4', userId: 'user1', businessId: 'biz2', companyRating: 3, text: 'No tenían la bebida que buscaba, y el pasillo 3 estaba muy desordenado.', userQualityRating: null, status: 'pending', incentive: null, response: null, systemMessage: null },
+                { id: 'fb5', userId: 'user1', businessId: 'biz4', companyRating: 1, text: 'El conductor tomó una ruta mucho más larga y el auto olía mal. La app me cobró de más.', userQualityRating: null, status: 'pending', incentive: null, response: null, systemMessage: null },
+                { id: 'fb6', userId: 'user2', businessId: 'biz1', companyRating: 4, text: 'Muy buen ambiente, la música estaba perfecta. El ceviche un poco salado para mi gusto, pero el resto increíble.', userQualityRating: 4, status: 'resolved', incentive: '15% Dcto.', response: '¡Muchas gracias por tu feedback Benjamín! Pasaremos tu comentario sobre la sal a cocina. ¡Te esperamos!', systemMessage: null },
+            ],
+            focusGroups: [
+                { id: 'fg1', businessId: 'biz1', topic: 'Prueba de Nuevo Menú de Verano', description: 'Buscamos 10 usuarios para probar 3 platos nuevos y darnos su opinión directa. Se requiere asistir al local (Peñalolén).', incentive: 'Cena Gratis para 2 personas', status: 'open', participants: ['user1', 'admin'], chatHistory: [{ id: 'msg1', userId: 'admin', text: '¡Bienvenidos al focus group del nuevo menú! Estamos emocionados por sus ideas. ¿Qué esperan de un menú de verano?' }, { id: 'msg2', userId: 'user1', text: '¡Hola! Yo espero platos más frescos, quizás más opciones de pescado.' }] },
+                { id: 'fg2', businessId: 'biz4', topic: 'Feedback sobre la nueva App v3.0 (Beta)', description: 'Necesitamos 5 usuarios "heavy users" de apps de transporte para probar la nueva interfaz antes del lanzamiento.', incentive: '2 Viajes Gratis (hasta $5.000 c/u)', status: 'open', participants: [], chatHistory: [{ id: 'msg3', userId: 'admin', text: 'Quedan 3 cupos para este focus group. ¡El feedback será clave para la nueva versión!' }] },
+                { id: 'fg3', businessId: 'biz3', topic: 'Nuevos Colores Zapatillas Urbanas', description: 'Opinión sobre 5 nuevos colores para nuestra línea de zapatillas urbanas. (Cerrado)', incentive: '30% Dcto.', status: 'closed', participants: ['user2'], chatHistory: [] },
+            ],
+        };
 
-// --- INICIO: LÓGICA DE GEMINI API ---
-const API_KEY = ''; 
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+        // --- RUBROS ---
+        const RUBROS_CATEGORIAS = [
+            { name: 'Gastronomía', mercado: 'Gastronomía', icon: <FoodIcon />, color: 'bg-red-500' },
+            { name: 'Retail', mercado: 'Retail', icon: <ShopIcon />, color: 'bg-blue-500' },
+            { name: 'Transporte', mercado: 'Transporte', icon: <TransportIcon />, color: 'bg-green-500' },
+            { name: 'Ver Todos', mercado: null, icon: <GlobeIcon />, color: 'bg-gray-500' },
+        ];
 
-const callGeminiAPI = async (prompt, retryCount = 0) => {
-  const payload = {
-    contents: [{ parts: [{ text: prompt }] }],
-  };
+        // --- API MOCK ---
+        const callGeminiAPI = async (prompt) => {
+            // Simulación de llamada a API
+            return new Promise(resolve => setTimeout(() => resolve(null), 1000));
+        };
 
-  try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+        // --- COMPONENTES DE LA APP ---
 
-    if (!response.ok) {
-      if (response.status === 429 && retryCount < 5) {
-        const delay = Math.pow(2, retryCount) * 1000 + Math.random() * 1000;
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        return callGeminiAPI(prompt, retryCount + 1);
-      }
-      throw new Error(`Error en API: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-    return text;
-  } catch (error) {
-    // Silently fail or log error if needed
-    return null;
-  }
-};
-// --- FIN: LÓGICA DE GEMINI API ---
-
-// --- COMPONENTES DE LA APP ---
-
-const StarRatingInput = ({ rating, setRating }) => {
-  return (
-    <div className="flex items-center">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => setRating(star)}
-          className="text-gray-400 hover:text-yellow-500 transition-colors"
-        >
-          <StarIcon
-            fill={star <= rating ? 'currentColor' : 'none'}
-            className={`w-8 h-8 ${
-              star <= rating ? 'text-yellow-500' : 'text-gray-300'
-            }`}
-          />
-        </button>
-      ))}
-    </div>
-  );
-};
-
-const StarRatingDisplay = ({ rating }) => {
-  const fullStars = Math.floor(rating);
-  const halfStar = rating % 1 !== 0;
-  const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
-
-  return (
-    <div className="flex items-center">
-      {[...Array(fullStars)].map((_, i) => (
-        <StarIcon key={`full-${i}`} fill="currentColor" className="w-5 h-5 text-yellow-500" />
-      ))}
-      {halfStar && (
-        <StarIcon fill="currentColor" className="w-5 h-5 text-yellow-500" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }} />
-      )}
-      {[...Array(emptyStars)].map((_, i) => (
-        <StarIcon key={`empty-${i}`} fill="none" className="w-5 h-5 text-yellow-500" />
-      ))}
-      <span className="ml-2 text-sm font-medium text-gray-600">({rating.toFixed(1)})</span>
-    </div>
-  );
-};
-
-const FeedbackForm = ({ businesses, currentUser, onSubmit, onClose, callGeminiAPI }) => {
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [companyRating, setCompanyRating] = useState(0);
-  const [text, setText] = useState('');
-  const [moderationError, setModerationError] = useState(null);
-  const [isVerifying, setIsVerifying] = useState(false);
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setSearchResults([]);
-      return;
-    }
-    const results = Object.values(businesses).filter((biz) =>
-      biz.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setSearchResults(results);
-  }, [searchQuery, businesses]);
-
-  useEffect(() => {
-    if (text.trim().length === 0) {
-      setModerationError(null);
-      setIsVerifying(false);
-      return;
-    }
-    const timer = setTimeout(() => verifyTextWithGemini(text), 1000);
-    return () => clearTimeout(timer);
-  }, [text]);
-
-  const verifyTextWithGemini = async (textToVerify) => {
-    if (textToVerify.trim().length < 15) {
-      setModerationError(null);
-      setIsVerifying(false);
-      return;
-    }
-    setIsVerifying(true);
-    setModerationError(null);
-    try {
-      const prompt = `
-        Eres un moderador de contenido legal para una plataforma de reseñas en Chile, 
-        actuando bajo la "ley de honra" (leyes de difamación).
-        Analiza la siguiente reseña de usuario. Tu única respuesta debe ser una de dos palabras: 'OK' o 'BLOCK'.
-        Reseña: "${textToVerify}"
-      `;
-      const decision = await callGeminiAPI(prompt);
-      if (decision && decision.trim().toUpperCase().includes('BLOCK')) {
-        setModerationError('Texto no permitido. Contenido potencialmente difamatorio.');
-      } else {
-        setModerationError(null);
-      }
-    } catch (error) {
-      // Fall open if API fails
-      setModerationError(null);
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (moderationError || companyRating === 0 || !text || !selectedBusiness || isVerifying) return;
-    const newFeedback = {
-      id: `fb${Math.random().toString(36).substr(2, 9)}`,
-      userId: currentUser.id,
-      businessId: selectedBusiness.id,
-      companyRating,
-      text,
-      userQualityRating: null,
-      status: 'pending',
-      incentive: null,
-      response: null,
-      systemMessage: null,
-    };
-    onSubmit(newFeedback);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative animate-fade-in-up">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">&times;</button>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Enviar Nueva Reseña</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Buscar Empresa</label>
-            {!selectedBusiness ? (
-              <div className="relative">
-                <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Ej: Restaurante El Sabor" className="w-full p-2 border border-gray-300 rounded-md" />
-                {searchResults.length > 0 && (
-                  <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
-                    {searchResults.map((biz) => (
-                      <li key={biz.id} onClick={() => { setSelectedBusiness(biz); setSearchQuery(''); setSearchResults([]); }} className="p-2 hover:bg-blue-100 cursor-pointer">{biz.name}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-between p-2 bg-blue-100 border border-blue-300 rounded-md">
-                <span className="font-medium text-blue-800">{selectedBusiness.name}</span>
-                <button type="button" onClick={() => setSelectedBusiness(null)} className="text-sm text-red-600 hover:text-red-800 font-medium">Cambiar</button>
-              </div>
-            )}
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Calificación</label>
-            <StarRatingInput rating={companyRating} setRating={setCompanyRating} />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reseña</label>
-            <textarea rows="4" value={text} onChange={(e) => setText(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
-            {isVerifying && <p className="text-xs text-blue-600 animate-pulse mt-1">✨ Verificando...</p>}
-          </div>
-          {moderationError && (
-            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-md flex">
-              <AlertIcon className="w-6 h-6 mr-3" />
-              <p>{moderationError}</p>
-            </div>
-          )}
-          <button type="submit" disabled={moderationError || companyRating === 0 || !text || !selectedBusiness || isVerifying} className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400">Enviar</button>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-const CategorySelector = ({ onSelectRubro, selectedMercado }) => (
-  <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200">
-    <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">Explorar Rubros</h3>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 justify-items-center">
-      {RUBROS_CATEGORIAS.map((rubro) => (
-        <button key={rubro.name} onClick={() => onSelectRubro(rubro.mercado)} className={`flex flex-col items-center group transition-transform hover:scale-105 ${selectedMercado === rubro.mercado ? 'scale-105' : ''}`}>
-          <div className={`flex items-center justify-center w-24 h-24 md:w-32 md:h-32 rounded-full text-white shadow-lg ${rubro.color} ${selectedMercado === rubro.mercado ? 'ring-4 ring-blue-500' : ''}`}>
-            {React.cloneElement(rubro.icon, { className: 'w-10 h-10 md:w-12 md:h-12' })}
-          </div>
-          <span className="mt-3 font-semibold text-gray-700 text-center">{rubro.name}</span>
-        </button>
-      ))}
-    </div>
-  </div>
-);
-
-const UserDashboard = ({ currentUser, feedback, businesses, users, onNewFeedback, callGeminiAPI, selectedMercado, setSelectedMercado }) => {
-  const [showForm, setShowForm] = useState(false);
-  const myFeedback = useMemo(() => feedback.filter((fb) => fb.userId === currentUser.id).sort((a, b) => (a.status === 'pending' ? -1 : 1)), [feedback, currentUser.id]);
-  const communityFeedback = useMemo(() => feedback.filter((fb) => fb.status === 'resolved' && fb.userId !== currentUser.id && (!selectedMercado || businesses[fb.businessId]?.mercado === selectedMercado)).sort((a, b) => b.id.localeCompare(a.id)), [feedback, currentUser.id, businesses, selectedMercado]);
-
-  return (
-    <div className="p-4 md:p-8">
-      {showForm && <FeedbackForm businesses={businesses} currentUser={currentUser} onSubmit={(fb) => { onNewFeedback(fb); setShowForm(false); }} onClose={() => setShowForm(false)} callGeminiAPI={callGeminiAPI} />}
-      <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200 flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Hola, {currentUser.name}</h2>
-          <p className="text-gray-600">Bienvenida a tu panel de consumidor.</p>
-        </div>
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">Categoría: {currentUser.tier}</div>
-      </div>
-      <CategorySelector onSelectRubro={setSelectedMercado} selectedMercado={selectedMercado} />
-      <div className="flex justify-end mb-4"><button onClick={() => setShowForm(true)} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">+ Enviar Nueva Reseña</button></div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Feedback de la Comunidad {selectedMercado && <span className="text-base font-normal text-blue-600">({selectedMercado})</span>}</h3>
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-            {communityFeedback.map((fb) => (
-              <div key={fb.id} className="border rounded-lg p-4 border-gray-200">
-                <div className="flex items-center mb-2"><UserIcon className="w-6 h-6 text-gray-400 mr-2" /><span className="font-semibold">{users[fb.userId]?.name}</span></div>
-                <p className="font-bold text-lg">{businesses[fb.businessId]?.name}</p>
-                <p className="italic">"{fb.text}"</p>
-                <div className="bg-gray-100 p-3 mt-2 rounded-md"><p className="font-semibold">Respuesta:</p><p>{fb.response}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Historial</h3>
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-            {myFeedback.map((fb) => (
-              <div key={fb.id} className="border rounded-lg p-4 border-gray-200">
-                 <p className="font-bold text-lg">{businesses[fb.businessId]?.name}</p>
-                 <p className="italic">"{fb.text}"</p>
-                 <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${fb.status === 'pending' ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}`}>{fb.status === 'pending' ? 'En Revisión' : 'Resuelto'}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const BusinessDashboard = ({ selectedBusiness, setSelectedBusiness, businesses, feedback, users, onReview, callGeminiAPI, isProcessing }) => {
-   const [selectedFeedback, setSelectedFeedback] = useState(null);
-   const [userQualityRating, setUserQualityRating] = useState(0);
-   const [response, setResponse] = useState('');
-   const [wantsToSkipIncentive, setWantsToSkipIncentive] = useState(false);
-   
-   const pendingFeedback = useMemo(() => feedback.filter((fb) => fb.status === 'pending'), [feedback]);
-   
-   const groupedPendingFeedback = useMemo(() => {
-    return pendingFeedback.reduce((acc, fb) => {
-      const business = businesses[fb.businessId];
-      if (!business) return acc;
-      const mercado = business.mercado || 'Sin Categoría';
-      if (!acc[mercado]) {
-        acc[mercado] = [];
-      }
-      acc[mercado].push(fb);
-      return acc;
-    }, {});
-  }, [pendingFeedback, businesses]);
-
-   const handleSubmitReview = (e) => {
-      e.preventDefault();
-      if (!selectedFeedback) return;
-      onReview(selectedFeedback.id, selectedFeedback.userId, userQualityRating, response, wantsToSkipIncentive);
-      setSelectedFeedback(null);
-      setUserQualityRating(0);
-      setResponse('');
-      setWantsToSkipIncentive(false);
-   };
-
-   return (
-      <div className="p-4 md:p-8">
-         <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200"><h2 className="text-2xl font-bold text-gray-800">Panel de Administrador (B2B)</h2></div>
-         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200 max-h-[80vh] overflow-y-auto">
-               <h3 className="text-xl font-semibold mb-4">Pendientes por Mercado</h3>
-               {Object.entries(groupedPendingFeedback).map(([mercado, fbs]) => (
-                  <div key={mercado} className="mb-4 border border-gray-200 rounded-lg">
-                    <div className="bg-gray-100 p-3 rounded-t-lg font-bold">{mercado}</div>
-                    <div className="p-3">
-                      {fbs.map(fb => (
-                        <div key={fb.id} className="border p-4 mb-2 rounded bg-yellow-50">
-                          <p className="font-bold">{businesses[fb.businessId]?.name}</p>
-                          <p>"{fb.text}"</p>
-                          <button onClick={() => { setSelectedFeedback(fb); setSelectedBusiness(businesses[fb.businessId]); }} className="bg-blue-600 text-white px-3 py-1 rounded mt-2">Revisar</button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-               ))}
-               {pendingFeedback.length === 0 && <p>No hay feedback pendiente.</p>}
-            </div>
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-blue-300">
-               <h3 className="text-xl font-semibold text-blue-800 mb-4">Revisar {selectedBusiness && `: ${selectedBusiness.name}`}</h3>
-               {selectedFeedback ? (
-                  <form onSubmit={handleSubmitReview}>
-                     <p className="mb-4 bg-gray-50 p-3 rounded">Reseña: "{selectedFeedback.text}"</p>
-                     <div className="mb-4"><label className="block mb-1 font-semibold">Calidad:</label><StarRatingInput rating={userQualityRating} setRating={setUserQualityRating} /></div>
-                     <div className="mb-4"><label><input type="checkbox" checked={wantsToSkipIncentive} onChange={e => setWantsToSkipIncentive(e.target.checked)} /> Intentar no entregar incentivo</label></div>
-                     <textarea className="w-full border p-2 mb-4 rounded" value={response} onChange={e => setResponse(e.target.value)} placeholder="Escribe una respuesta..." rows={3} />
-                     <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded w-full font-bold" disabled={isProcessing}>{isProcessing ? 'Procesando...' : 'Aprobar'}</button>
-                  </form>
-               ) : <div className="flex items-center justify-center h-40 text-gray-500">Selecciona una reseña para revisar</div>}
-            </div>
-         </div>
-      </div>
-   );
-};
-
-const FocusGroupDashboard = ({ focusGroups, businesses, users, currentUser, currentFocusGroup, onSelectGroup, onSendMessage, selectedMercado }) => {
-   const [chatMessage, setChatMessage] = useState('');
-   const chatHistoryRef = useRef(null);
-   const availableGroups = useMemo(() => focusGroups.filter(fg => fg.status === 'open' && (!selectedMercado || businesses[fg.businessId]?.mercado === selectedMercado)), [focusGroups, businesses, selectedMercado]);
-   
-   useEffect(() => {
-    if (chatHistoryRef.current) {
-      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
-    }
-  }, [currentFocusGroup?.chatHistory]);
-
-   return (
-      <div className="p-4 md:p-8">
-         <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200"><h2 className="text-2xl font-bold text-gray-800">Focus Groups</h2></div>
-         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-               <h3 className="font-semibold mb-4">Salas Disponibles</h3>
-               {availableGroups.map(fg => (
-                  <div key={fg.id} onClick={() => onSelectGroup(fg)} className={`border p-4 mb-2 rounded cursor-pointer transition-colors ${currentFocusGroup?.id === fg.id ? 'bg-blue-50 border-blue-500' : 'hover:bg-gray-50'}`}>
-                     <p className="font-bold">{businesses[fg.businessId]?.name}</p>
-                     <p className="text-sm font-medium text-blue-600">{fg.topic}</p>
-                     <p className="text-xs mt-1">{fg.description}</p>
-                     <div className="mt-2 text-xs font-bold text-green-700 bg-green-100 p-1 rounded inline-block">{fg.incentive}</div>
-                  </div>
-               ))}
-               {availableGroups.length === 0 && <p className="text-gray-500">No hay grupos activos.</p>}
-            </div>
-            <div className="lg:col-span-2 bg-white shadow-lg rounded-xl border border-gray-200 flex flex-col h-[600px]">
-               {currentFocusGroup ? (
-                  <>
-                     <div className="p-4 border-b">
-                        <h3 className="font-bold text-lg text-blue-800">{currentFocusGroup.topic}</h3>
-                        <p className="text-sm text-gray-600">{businesses[currentFocusGroup.businessId]?.name}</p>
-                     </div>
-                     <div ref={chatHistoryRef} className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3">
-                        {currentFocusGroup.chatHistory.map(msg => (
-                           <div key={msg.id} className={`p-3 rounded-lg max-w-md ${msg.userId === currentUser.id ? 'ml-auto bg-blue-600 text-white' : (msg.userId === 'admin' ? 'bg-yellow-100 border-yellow-300 text-yellow-900' : 'bg-white border')}`}>
-                              <p className="text-xs font-bold mb-1 opacity-80">{users[msg.userId]?.name || (msg.userId === 'admin' ? 'Empresa' : 'Usuario')}</p>
-                              <p className="text-sm">{msg.text}</p>
-                           </div>
-                        ))}
-                     </div>
-                     <form onSubmit={(e) => { e.preventDefault(); if(chatMessage) { onSendMessage(currentFocusGroup.id, chatMessage); setChatMessage(''); } }} className="p-4 border-t flex gap-2 bg-white">
-                        <input className="flex-1 border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={chatMessage} onChange={e => setChatMessage(e.target.value)} placeholder="Escribe tu mensaje..." />
-                        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors">Enviar</button>
-                     </form>
-                  </>
-               ) : <div className="flex items-center justify-center h-full text-gray-500 text-lg">Selecciona una sala para participar</div>}
-            </div>
-         </div>
-      </div>
-   );
-};
-
-// --- LANDING PAGE COMPONENT ---
-const LandingPage = ({ onEnterApp }) => {
-  return (
-    <div className="antialiased text-[#333333] bg-[#F8F8F8]">
-      <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => onEnterApp('landing')}>
-            <FunappiLogo className="w-10 h-10" idSuffix="landing-nav" />
-            <span className="font-heading font-bold text-2xl text-[#333333]">Funappi</span>
-          </div>
-          <div className="hidden md:flex items-center gap-6">
-            <a href="#como-funciona" className="text-[#888888] hover:text-[#6A4C93] font-medium transition-colors">¿Cómo funciona?</a>
-            <a href="#beneficios" className="text-[#888888] hover:text-[#6A4C93] font-medium transition-colors">Beneficios</a>
-            <button onClick={() => onEnterApp('user')} className="text-[#333333] font-semibold hover:text-[#FF6B6B] transition-colors">Iniciar Sesión</button>
-            <button onClick={() => onEnterApp('user')} className="bg-[#00BFFF] text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-[#00BFFF]/30 hover:opacity-90 transition-all transform hover:-translate-y-0.5">
-              Únete Gratis
-            </button>
-          </div>
-          <button className="md:hidden text-[#333333]" onClick={() => onEnterApp('user')}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-          </button>
-        </div>
-      </nav>
-
-      {/* 1. HERO SECTION */}
-      <header className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-[#6A4C93]/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-[#FF6B6B]/10 rounded-full blur-3xl"></div>
-
-        <div className="container mx-auto px-6 max-w-7xl relative z-10">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            <div className="lg:w-1/2 text-center lg:text-left animate-fade-in-up">
-              <span className="inline-block py-1 px-3 rounded-full bg-[#FF6B6B]/10 text-[#FF6B6B] text-sm font-bold tracking-wider mb-4">🚀 REVOLUCIONANDO EL FEEDBACK</span>
-              <h1 className="font-heading text-4xl lg:text-6xl font-extrabold leading-tight mb-6 text-[#333333]">
-                ¡Bienvenido a Funappi! <br /> <span className="text-gradient">Tu Voz es Valor</span> <br /> <span className="text-2xl lg:text-4xl text-gray-400 font-semibold block mt-2">(Y Es Recompensada)</span>
-              </h1>
-              <h2 className="text-xl lg:text-2xl font-medium text-[#6A4C93] mb-6">
-                Funappi: <strong>Opina. Influye. Gana.</strong>
-              </h2>
-              <p className="text-[#888888] text-lg mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
-                La plataforma diseñada para transformar el diálogo entre personas y marcas, convirtiendo tu experiencia en crecimiento premiado.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <button onClick={() => onEnterApp('user')} className="bg-[#00BFFF] text-white text-lg px-8 py-4 rounded-full font-bold shadow-xl shadow-[#00BFFF]/30 hover:opacity-90 transition-all transform hover:-translate-y-1 w-full sm:w-auto text-center">
-                  ¡Empieza a Ganar con tu Opinión!
-                </button>
-                <a href="#como-funciona" className="bg-white text-[#333333] border border-gray-200 text-lg px-8 py-4 rounded-full font-bold hover:bg-gray-50 transition-all w-full sm:w-auto text-center flex items-center justify-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#6A4C93]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Ver Video
-                </a>
-              </div>
-            </div>
-            <div className="lg:w-1/2 relative animate-fade-in-up" style={{animationDelay: '0.2s'}}>
-               <div className="relative bg-gradient-brand rounded-3xl p-1 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
-                <div className="bg-white rounded-[20px] overflow-hidden relative min-h-[400px] flex items-center justify-center">
-                  <div className="text-center p-8">
-                    <div className="w-24 h-24 mx-auto bg-[#5BE2B3]/20 rounded-full flex items-center justify-center mb-6 animate-bounce">
-                      <StarIcon className="w-12 h-12 text-[#5BE2B3]" fill="currentColor" />
-                    </div>
-                    <h3 className="font-heading text-2xl font-bold text-[#333333] mb-2">Feedback Recibido</h3>
-                    <p className="text-[#888888] mb-6">Tu opinión sobre "Restaurante El Sabor" ha generado:</p>
-                    <div className="bg-[#F8F8F8] p-4 rounded-xl border border-gray-200 inline-block">
-                      <span className="text-3xl font-bold text-[#6A4C93]">15% OFF</span>
-                      <span className="block text-xs text-[#888888] uppercase tracking-wide mt-1">En tu próxima visita</span>
-                    </div>
-                  </div>
-                  <div className="absolute top-10 right-10 bg-white p-3 rounded-xl shadow-lg animate-pulse"><span className="text-2xl">😊</span></div>
-                  <div className="absolute bottom-10 left-10 bg-white p-3 rounded-xl shadow-lg animate-pulse delay-75"><span className="text-2xl">⭐</span></div>
+        const StarRatingInput = ({ rating, setRating }) => {
+            return (
+                <div className="flex items-center">
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className="text-gray-400 hover:text-yellow-500 transition-colors"
+                    >
+                    <StarIcon
+                        fill={star <= rating ? 'currentColor' : 'none'}
+                        className={`w-8 h-8 ${star <= rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                    />
+                    </button>
+                ))}
                 </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+            );
+        };
 
-      {/* 2. PROBLEMA / SOLUCIÓN */}
-      <section className="py-20 bg-white relative">
-        <div className="container mx-auto px-6 max-w-4xl text-center">
-          <h2 className="font-heading text-3xl lg:text-4xl font-bold text-[#6A4C93] mb-12">
-            De la Queja Olvidada al <br /> <span className="text-[#5BE2B3] underline decoration-4 decoration-[#5BE2B3]/30">Crecimiento Premiado</span>
-          </h2>
-          <div className="bg-white p-8 lg:p-12 rounded-2xl shadow-glow border-l-8 border-[#FF6B6B] text-left relative overflow-hidden group hover:-translate-y-1 transition-transform">
-            <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-[#FF6B6B]/10 rounded-full"></div>
-            <p className="text-xl lg:text-2xl text-[#333333] font-medium leading-relaxed italic relative z-10">
-              "En lugar de que una mala experiencia termine en quejas olvidadas, <span className="font-bold text-[#6A4C93]">Funappi te empodera</span> para revertir esa situación, convirtiendo tu feedback en una palanca de transformación inmediata, crecimiento para la marca, y un <span class="bg-yellow-100 px-2">beneficio directo para ti</span>."
-            </p>
-          </div>
-        </div>
-      </section>
+        const StarRatingDisplay = ({ rating }) => {
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 !== 0;
+            const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
 
-      {/* 3. CÓMO FUNCIONA */}
-      <section id="como-funciona" className="py-20 bg-[#F8F8F8]">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center mb-16">
-            <span className="text-[#00BFFF] font-bold tracking-wider uppercase text-sm">El Proceso</span>
-            <h2 className="font-heading text-3xl lg:text-4xl font-bold text-[#333333] mt-2">Así Transformamos Tu Feedback</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 text-center group">
-              <div className="w-20 h-20 mx-auto bg-[#FF6B6B]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#FF6B6B]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-              </div>
-              <h3 className="font-heading text-xl font-bold text-[#333333] mb-3">1. Opina</h3>
-              <p className="text-[#888888]">Recopila tu experiencia de uso de forma constructiva y verificable.</p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 text-center group relative">
-              <div className="w-20 h-20 mx-auto bg-[#6A4C93]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#6A4C93]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              </div>
-              <h3 className="font-heading text-xl font-bold text-[#333333] mb-3">2. Transforma</h3>
-              <p className="text-[#888888]">Tu aporte se convierte en una curva de valor ascendente que la marca utiliza para evolucionar.</p>
-            </div>
-            <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 text-center group">
-              <div className="w-20 h-20 mx-auto bg-[#5BE2B3]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#5BE2B3]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
-              </div>
-              <h3 className="font-heading text-xl font-bold text-[#333333] mb-3">3. Gana</h3>
-              <p className="text-[#888888]">Si tu feedback es valioso, la marca te recompensa directamente.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+            return (
+                <div className="flex items-center">
+                {[...Array(fullStars)].map((_, i) => (
+                    <StarIcon key={`full-${i}`} fill="currentColor" className="w-5 h-5 text-yellow-500" />
+                ))}
+                {halfStar && (
+                    <StarIcon fill="currentColor" className="w-5 h-5 text-yellow-500" style={{ clipPath: 'polygon(0 0, 50% 0, 50% 100%, 0 100%)' }} />
+                )}
+                {[...Array(emptyStars)].map((_, i) => (
+                    <StarIcon key={`empty-${i}`} fill="none" className="w-5 h-5 text-yellow-500" />
+                ))}
+                <span className="ml-2 text-sm font-medium text-gray-600">({rating.toFixed(1)})</span>
+                </div>
+            );
+        };
 
-      {/* 4. IMPACTO Y RECOMPENSA */}
-      <section id="beneficios" className="py-20 bg-[#6A4C93] text-white relative overflow-hidden">
-        <div className="container mx-auto px-6 max-w-7xl relative z-10">
-          <div className="text-center mb-16">
-            <h2 className="font-heading text-3xl lg:text-5xl font-extrabold mb-6">Tu Voz Resuena y te Abre Puertas Exclusivas</h2>
-            <p className="text-purple-200 text-lg max-w-2xl mx-auto">No es solo un cupón, es empoderamiento. Únete al ecosistema donde tu criterio tiene peso.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
-              <h3 className="font-bold text-xl mb-2 flex items-center gap-2"><span className="bg-[#5BE2B3] p-1 rounded text-white">💰</span> Recompensas Directas</h3>
-              <p className="text-purple-100 leading-relaxed">Las empresas están listas para premiar tu esfuerzo y visión con beneficios tangibles.</p>
+        const FeedbackForm = ({ businesses, currentUser, onSubmit, onClose, callGeminiAPI }) => {
+            const [selectedBusiness, setSelectedBusiness] = useState(null);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [searchResults, setSearchResults] = useState([]);
+            const [companyRating, setCompanyRating] = useState(0);
+            const [text, setText] = useState('');
+            const [moderationError, setModerationError] = useState(null);
+            const [isVerifying, setIsVerifying] = useState(false);
+
+            useEffect(() => {
+                if (searchQuery.trim() === '') {
+                setSearchResults([]);
+                return;
+                }
+                const results = Object.values(businesses).filter((biz) =>
+                biz.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+                setSearchResults(results);
+            }, [searchQuery, businesses]);
+
+            useEffect(() => {
+                if (text.trim().length === 0) {
+                setModerationError(null);
+                setIsVerifying(false);
+                return;
+                }
+                const timer = setTimeout(() => verifyTextWithGemini(text), 1000);
+                return () => clearTimeout(timer);
+            }, [text]);
+
+            const verifyTextWithGemini = async (textToVerify) => {
+                if (textToVerify.trim().length < 15) {
+                setModerationError(null);
+                setIsVerifying(false);
+                return;
+                }
+                setIsVerifying(true);
+                setModerationError(null);
+                try {
+                const decision = await callGeminiAPI(''); // Mock call
+                if (decision && decision.trim().toUpperCase().includes('BLOCK')) {
+                    setModerationError('Texto no permitido. Contenido potencialmente difamatorio.');
+                } else {
+                    setModerationError(null);
+                }
+                } catch (error) {
+                setModerationError(null);
+                } finally {
+                setIsVerifying(false);
+                }
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (moderationError || companyRating === 0 || !text || !selectedBusiness || isVerifying) return;
+                const newFeedback = {
+                id: `fb${Math.random().toString(36).substr(2, 9)}`,
+                userId: currentUser.id,
+                businessId: selectedBusiness.id,
+                companyRating,
+                text,
+                userQualityRating: null,
+                status: 'pending',
+                incentive: null,
+                response: null,
+                systemMessage: null,
+                };
+                onSubmit(newFeedback);
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative animate-fade-in-up">
+                    <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">&times;</button>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Enviar Nueva Reseña</h2>
+                    <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Buscar Empresa</label>
+                        {!selectedBusiness ? (
+                        <div className="relative">
+                            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Ej: Restaurante El Sabor" className="w-full p-2 border border-gray-300 rounded-md" />
+                            {searchResults.length > 0 && (
+                            <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                                {searchResults.map((biz) => (
+                                <li key={biz.id} onClick={() => { setSelectedBusiness(biz); setSearchQuery(''); setSearchResults([]); }} className="p-2 hover:bg-blue-100 cursor-pointer">{biz.name}</li>
+                                ))}
+                            </ul>
+                            )}
+                        </div>
+                        ) : (
+                        <div className="flex items-center justify-between p-2 bg-blue-100 border border-blue-300 rounded-md">
+                            <span className="font-medium text-blue-800">{selectedBusiness.name}</span>
+                            <button type="button" onClick={() => setSelectedBusiness(null)} className="text-sm text-red-600 hover:text-red-800 font-medium">Cambiar</button>
+                        </div>
+                        )}
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Calificación</label>
+                        <StarRatingInput rating={companyRating} setRating={setCompanyRating} />
+                    </div>
+                    <div className="mb-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Reseña</label>
+                        <textarea rows="4" value={text} onChange={(e) => setText(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                        {isVerifying && <p className="text-xs text-blue-600 animate-pulse mt-1">✨ Verificando...</p>}
+                    </div>
+                    {moderationError && (
+                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded-md flex">
+                        <AlertIcon className="w-6 h-6 mr-3" />
+                        <p>{moderationError}</p>
+                        </div>
+                    )}
+                    <button type="submit" disabled={moderationError || companyRating === 0 || !text || !selectedBusiness || isVerifying} className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400">Enviar</button>
+                    </form>
+                </div>
+                </div>
+            );
+        };
+
+        const CategorySelector = ({ onSelectRubro, selectedMercado }) => (
+            <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">Explorar Rubros</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 justify-items-center">
+                {RUBROS_CATEGORIAS.map((rubro) => (
+                    <button key={rubro.name} onClick={() => onSelectRubro(rubro.mercado)} className={`flex flex-col items-center group transition-transform hover:scale-105 ${selectedMercado === rubro.mercado ? 'scale-105' : ''}`}>
+                    <div className={`flex items-center justify-center w-24 h-24 md:w-32 md:h-32 rounded-full text-white shadow-lg ${rubro.color} ${selectedMercado === rubro.mercado ? 'ring-4 ring-blue-500' : ''}`}>
+                        {React.cloneElement(rubro.icon, { className: 'w-10 h-10 md:w-12 md:h-12' })}
+                    </div>
+                    <span className="mt-3 font-semibold text-gray-700 text-center">{rubro.name}</span>
+                    </button>
+                ))}
+                </div>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
-              <h3 className="font-bold text-xl mb-2 flex items-center gap-2"><span className="bg-[#FF6B6B] p-1 rounded text-white">🎤</span> Influencia Real</h3>
-              <p className="text-purple-100 leading-relaxed">Accede a instancias exclusivas como focus groups y exposición con líderes de marca.</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
-              <h3 className="font-bold text-xl mb-2 flex items-center gap-2"><span className="bg-[#00BFFF] p-1 rounded text-white">🌍</span> Cambio Global</h3>
-              <p className="text-purple-100 leading-relaxed">No solo mejoras productos, ayudas a mejorar el mundo cambiando la forma en que las marcas operan.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+        );
 
-      {/* 5. CIERRE (CTA FINAL) */}
-      <section className="py-20 bg-white text-center">
-        <div className="container mx-auto px-6 max-w-4xl">
-          <h2 className="font-heading text-3xl lg:text-4xl font-bold text-[#333333] mb-6">
-            ¡Gracias por unirte a la plataforma donde el feedback es recompensado y el cambio comienza contigo!
-          </h2>
-          <div className="mt-10">
-            <button onClick={() => onEnterApp('user')} className="inline-block bg-gradient-brand text-white text-xl lg:text-2xl px-10 py-5 rounded-full font-extrabold shadow-2xl hover:shadow-[#FF6B6B]/50 hover:scale-105 transition-all duration-300">
-              ¡Quiero ser un Agente de Cambio con Funappi!
-            </button>
-          </div>
-        </div>
-      </section>
+        const UserDashboard = ({ currentUser, feedback, businesses, users, onNewFeedback, callGeminiAPI, selectedMercado, setSelectedMercado }) => {
+            const [showForm, setShowForm] = useState(false);
+            const myFeedback = useMemo(() => feedback.filter((fb) => fb.userId === currentUser.id).sort((a, b) => (a.status === 'pending' ? -1 : 1)), [feedback, currentUser.id]);
+            const communityFeedback = useMemo(() => feedback.filter((fb) => fb.status === 'resolved' && fb.userId !== currentUser.id && (!selectedMercado || businesses[fb.businessId]?.mercado === selectedMercado)).sort((a, b) => b.id.localeCompare(a.id)), [feedback, currentUser.id, businesses, selectedMercado]);
 
-      {/* FOOTER */}
-      <footer className="bg-gray-50 border-t border-gray-200 pt-12 pb-8">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-6 md:mb-0">
-              <span className="font-heading font-bold text-2xl text-[#333333] flex items-center gap-2">
-                <span className="text-[#6A4C93]">Fun</span>appi
-              </span>
-              <p className="text-sm text-gray-500 mt-2">© 2025 Funappi Inc. Todos los derechos reservados.</p>
-            </div>
-            <div className="flex gap-6">
-              <a href="#" className="text-gray-500 hover:text-[#00BFFF] transition-colors">Privacidad</a>
-              <a href="#" className="text-gray-500 hover:text-[#00BFFF] transition-colors">Términos</a>
-              <a href="#" className="text-gray-500 hover:text-[#00BFFF] transition-colors">Soporte</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-};
+            return (
+                <div className="p-4 md:p-8">
+                {showForm && <FeedbackForm businesses={businesses} currentUser={currentUser} onSubmit={(fb) => { onNewFeedback(fb); setShowForm(false); }} onClose={() => setShowForm(false)} callGeminiAPI={callGeminiAPI} />}
+                <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200 flex justify-between items-start">
+                    <div>
+                    <h2 className="text-2xl font-bold text-gray-800">Hola, {currentUser.name}</h2>
+                    <p className="text-gray-600">Bienvenida a tu panel de consumidor.</p>
+                    </div>
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-md">Categoría: {currentUser.tier}</div>
+                </div>
+                <CategorySelector onSelectRubro={setSelectedMercado} selectedMercado={selectedMercado} />
+                <div className="flex justify-end mb-4"><button onClick={() => setShowForm(true)} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700">+ Enviar Nueva Reseña</button></div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Feedback de la Comunidad {selectedMercado && <span className="text-base font-normal text-blue-600">({selectedMercado})</span>}</h3>
+                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                        {communityFeedback.map((fb) => (
+                        <div key={fb.id} className="border rounded-lg p-4 border-gray-200">
+                            <div className="flex items-center mb-2"><UserIcon className="w-6 h-6 text-gray-400 mr-2" /><span className="font-semibold">{users[fb.userId]?.name}</span></div>
+                            <p className="font-bold text-lg">{businesses[fb.businessId]?.name}</p>
+                            <p className="italic">"{fb.text}"</p>
+                            <div className="bg-gray-100 p-3 mt-2 rounded-md"><p className="font-semibold">Respuesta:</p><p>{fb.response}</p></div>
+                        </div>
+                        ))}
+                    </div>
+                    </div>
+                    <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Historial</h3>
+                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                        {myFeedback.map((fb) => (
+                        <div key={fb.id} className="border rounded-lg p-4 border-gray-200">
+                            <p className="font-bold text-lg">{businesses[fb.businessId]?.name}</p>
+                            <p className="italic">"{fb.text}"</p>
+                            <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${fb.status === 'pending' ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}`}>{fb.status === 'pending' ? 'En Revisión' : 'Resuelto'}</span>
+                        </div>
+                        ))}
+                    </div>
+                    </div>
+                </div>
+                </div>
+            );
+        };
 
-// --- MAIN APP SHELL ---
-export default function App() {
-  const [view, setView] = useState('landing');
-  const [appData, setAppData] = useState(MOCK_DATA);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
-  const [currentFocusGroup, setCurrentFocusGroup] = useState(null);
-  const [selectedMercado, setSelectedMercado] = useState(null);
+        const BusinessDashboard = ({ selectedBusiness, setSelectedBusiness, businesses, feedback, users, onReview, callGeminiAPI, isProcessing }) => {
+            const [selectedFeedback, setSelectedFeedback] = useState(null);
+            const [userQualityRating, setUserQualityRating] = useState(0);
+            const [response, setResponse] = useState('');
+            const [wantsToSkipIncentive, setWantsToSkipIncentive] = useState(false);
+            
+            const pendingFeedback = useMemo(() => feedback.filter((fb) => fb.status === 'pending'), [feedback]);
+            
+            const groupedPendingFeedback = useMemo(() => {
+                return pendingFeedback.reduce((acc, fb) => {
+                const business = businesses[fb.businessId];
+                if (!business) return acc;
+                const mercado = business.mercado || 'Sin Categoría';
+                if (!acc[mercado]) {
+                    acc[mercado] = [];
+                }
+                acc[mercado].push(fb);
+                return acc;
+                }, {});
+            }, [pendingFeedback, businesses]);
 
-  const handleNewFeedback = (newFeedback) => setAppData(prev => ({ ...prev, feedback: [...prev.feedback, newFeedback] }));
-  
-  const handleBusinessReview = async (feedbackId, userId, quality, response, skipIncentive) => {
-    setIsProcessing(true);
-    setTimeout(() => {
-       setAppData(prev => {
-          const updatedFeedback = prev.feedback.map(fb => fb.id === feedbackId ? { ...fb, status: 'resolved', userQualityRating: quality, response, incentive: skipIncentive ? null : 'Incentivo Generado (IA)' } : fb);
-          return { ...prev, feedback: updatedFeedback };
-       });
-       setIsProcessing(false);
-    }, 1500);
-  };
-  
-  const handleSendChatMessage = (fgId, text) => {
-     const msg = { id: Date.now().toString(), userId: 'user1', text };
-     setAppData(prev => {
-        const updatedGroups = prev.focusGroups.map(fg => fg.id === fgId ? { ...fg, chatHistory: [...fg.chatHistory, msg] } : fg);
-        return { ...prev, focusGroups: updatedGroups };
-     });
-     setCurrentFocusGroup(prev => prev && prev.id === fgId ? { ...prev, chatHistory: [...prev.chatHistory, msg] } : prev);
-  };
+            const handleSubmitReview = (e) => {
+                e.preventDefault();
+                if (!selectedFeedback) return;
+                onReview(selectedFeedback.id, selectedFeedback.userId, userQualityRating, response, wantsToSkipIncentive);
+                setSelectedFeedback(null);
+                setUserQualityRating(0);
+                setResponse('');
+                setWantsToSkipIncentive(false);
+            };
 
-  const enterApp = (role) => {
-    setView(role);
-    window.scrollTo(0, 0);
-  };
+            return (
+                <div className="p-4 md:p-8">
+                    <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200"><h2 className="text-2xl font-bold text-gray-800">Panel de Administrador (B2B)</h2></div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200 max-h-[80vh] overflow-y-auto">
+                        <h3 className="text-xl font-semibold mb-4">Pendientes por Mercado</h3>
+                        {Object.entries(groupedPendingFeedback).map(([mercado, fbs]) => (
+                            <div key={mercado} className="mb-4 border border-gray-200 rounded-lg">
+                                <div className="bg-gray-100 p-3 rounded-t-lg font-bold">{mercado}</div>
+                                <div className="p-3">
+                                {fbs.map(fb => (
+                                    <div key={fb.id} className="border p-4 mb-2 rounded bg-yellow-50">
+                                    <p className="font-bold">{businesses[fb.businessId]?.name}</p>
+                                    <p>"{fb.text}"</p>
+                                    <button onClick={() => { setSelectedFeedback(fb); setSelectedBusiness(businesses[fb.businessId]); }} className="bg-blue-600 text-white px-3 py-1 rounded mt-2">Revisar</button>
+                                    </div>
+                                ))}
+                                </div>
+                            </div>
+                        ))}
+                        {pendingFeedback.length === 0 && <p>No hay feedback pendiente.</p>}
+                        </div>
+                        <div className="bg-white shadow-lg rounded-xl p-6 border border-blue-300">
+                        <h3 className="text-xl font-semibold text-blue-800 mb-4">Revisar {selectedBusiness && `: ${selectedBusiness.name}`}</h3>
+                        {selectedFeedback ? (
+                            <form onSubmit={handleSubmitReview}>
+                                <p className="mb-4 bg-gray-50 p-3 rounded">Reseña: "{selectedFeedback.text}"</p>
+                                <div className="mb-4"><label className="block mb-1 font-semibold">Calidad:</label><StarRatingInput rating={userQualityRating} setRating={setUserQualityRating} /></div>
+                                <div className="mb-4"><label><input type="checkbox" checked={wantsToSkipIncentive} onChange={e => setWantsToSkipIncentive(e.target.checked)} /> Intentar no entregar incentivo</label></div>
+                                <textarea className="w-full border p-2 mb-4 rounded" value={response} onChange={e => setResponse(e.target.value)} placeholder="Escribe una respuesta..." rows={3} />
+                                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded w-full font-bold" disabled={isProcessing}>{isProcessing ? 'Procesando...' : 'Aprobar'}</button>
+                            </form>
+                        ) : <div className="flex items-center justify-center h-40 text-gray-500">Selecciona una reseña para revisar</div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
 
-  if (view === 'landing') {
-    return (
-      <>
-        <GlobalStyles />
-        <LandingPage onEnterApp={enterApp} />
-      </>
-    );
-  }
+        const FocusGroupDashboard = ({ focusGroups, businesses, users, currentUser, currentFocusGroup, onSelectGroup, onSendMessage, selectedMercado }) => {
+            const [chatMessage, setChatMessage] = useState('');
+            const chatHistoryRef = useRef(null);
+            const availableGroups = useMemo(() => focusGroups.filter(fg => fg.status === 'open' && (!selectedMercado || businesses[fg.businessId]?.mercado === selectedMercado)), [focusGroups, businesses, selectedMercado]);
+            
+            useEffect(() => {
+                if (chatHistoryRef.current) {
+                chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+                }
+            }, [currentFocusGroup?.chatHistory]);
 
-  return (
-    <div className="min-h-screen bg-gray-100 font-sans">
-      <GlobalStyles />
-      <header className="bg-white shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-3 max-w-7xl flex flex-col sm:flex-row justify-between items-center">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setView('landing')}>
-            <FunappiLogo className="w-12 h-12" idSuffix="app-nav" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Funappi</h1>
-              <p className="text-xs text-gray-500 font-medium tracking-wider uppercase">Constructive Feedback Loop</p>
-            </div>
-          </div>
-          <div className="flex space-x-2 mt-2 sm:mt-0">
-             <button onClick={() => setView('user')} className={`px-3 py-2 rounded transition-colors ${view === 'user' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>Consumidor</button>
-             <button onClick={() => setView('focus')} className={`px-3 py-2 rounded transition-colors ${view === 'focus' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>Focus Group</button>
-             <button onClick={() => setView('business')} className={`px-3 py-2 rounded transition-colors ${view === 'business' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>Admin</button>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-6 max-w-7xl">
-        {view === 'user' && <UserDashboard currentUser={appData.users.user1} feedback={appData.feedback} businesses={appData.businesses} users={appData.users} onNewFeedback={handleNewFeedback} callGeminiAPI={callGeminiAPI} selectedMercado={selectedMercado} setSelectedMercado={setSelectedMercado} />}
-        {view === 'business' && <BusinessDashboard selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businesses={appData.businesses} feedback={appData.feedback} users={appData.users} onReview={handleBusinessReview} callGeminiAPI={callGeminiAPI} isProcessing={isProcessing} />}
-        {view === 'focus' && <FocusGroupDashboard focusGroups={appData.focusGroups} businesses={appData.businesses} users={appData.users} currentUser={appData.users.user1} currentFocusGroup={currentFocusGroup} onSelectGroup={setCurrentFocusGroup} onSendMessage={handleSendChatMessage} selectedMercado={selectedMercado} />}
-      </main>
-    </div>
-  );
-}
+            return (
+                <div className="p-4 md:p-8">
+                    <div className="bg-white shadow-lg rounded-xl p-6 mb-6 border border-gray-200"><h2 className="text-2xl font-bold text-gray-800">Focus Groups</h2></div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
+                        <h3 className="font-semibold mb-4">Salas Disponibles</h3>
+                        {availableGroups.map(fg => (
+                            <div key={fg.id} onClick={() => onSelectGroup(fg)} className={`border p-4 mb-2 rounded cursor-pointer transition-colors ${currentFocusGroup?.id === fg.id ? 'bg-blue-50 border-blue-500' : 'hover:bg-gray-50'}`}>
+                                <p className="font-bold">{businesses[fg.businessId]?.name}</p>
+                                <p className="text-sm font-medium text-blue-600">{fg.topic}</p>
+                                <p className="text-xs mt-1">{fg.description}</p>
+                                <div className="mt-2 text-xs font-bold text-green-700 bg-green-100 p-1 rounded inline-block">{fg.incentive}</div>
+                            </div>
+                        ))}
+                        {availableGroups.length === 0 && <p className="text-gray-500">No hay grupos activos.</p>}
+                        </div>
+                        <div className="lg:col-span-2 bg-white shadow-lg rounded-xl border border-gray-200 flex flex-col h-[600px]">
+                        {currentFocusGroup ? (
+                            <>
+                                <div className="p-4 border-b">
+                                    <h3 className="font-bold text-lg text-blue-800">{currentFocusGroup.topic}</h3>
+                                    <p className="text-sm text-gray-600">{businesses[currentFocusGroup.businessId]?.name}</p>
+                                </div>
+                                <div ref={chatHistoryRef} className="flex-1 p-4 overflow-y-auto bg-gray-50 space-y-3">
+                                    {currentFocusGroup.chatHistory.map(msg => (
+                                    <div key={msg.id} className={`p-3 rounded-lg max-w-md ${msg.userId === currentUser.id ? 'ml-auto bg-blue-600 text-white' : (msg.userId === 'admin' ? 'bg-yellow-100 border-yellow-300 text-yellow-900' : 'bg-white border')}`}>
+                                        <p className="text-xs font-bold mb-1 opacity-80">{users[msg.userId]?.name || (msg.userId === 'admin' ? 'Empresa' : 'Usuario')}</p>
+                                        <p className="text-sm">{msg.text}</p>
+                                    </div>
+                                    ))}
+                                </div>
+                                <form onSubmit={(e) => { e.preventDefault(); if(chatMessage) { onSendMessage(currentFocusGroup.id, chatMessage); setChatMessage(''); } }} className="p-4 border-t flex gap-2 bg-white">
+                                    <input className="flex-1 border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={chatMessage} onChange={e => setChatMessage(e.target.value)} placeholder="Escribe tu mensaje..." />
+                                    <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition-colors">Enviar</button>
+                                </form>
+                            </>
+                        ) : <div className="flex items-center justify-center h-full text-gray-500 text-lg">Selecciona una sala para participar</div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const LandingPage = ({ onEnterApp }) => {
+            return (
+                <div className="antialiased text-[#333333] bg-[#F8F8F8]">
+                <nav className="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 transition-all duration-300">
+                    <div className="container mx-auto px-6 py-4 flex justify-between items-center max-w-7xl">
+                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => onEnterApp('landing')}>
+                        <FunappiLogo className="w-10 h-10" idSuffix="landing-nav" />
+                        <span className="font-heading font-bold text-2xl text-[#333333]">Funappi</span>
+                    </div>
+                    <div className="hidden md:flex items-center gap-6">
+                        <a href="#como-funciona" className="text-[#888888] hover:text-[#6A4C93] font-medium transition-colors">¿Cómo funciona?</a>
+                        <a href="#beneficios" className="text-[#888888] hover:text-[#6A4C93] font-medium transition-colors">Beneficios</a>
+                        <button onClick={() => onEnterApp('user')} className="text-[#333333] font-semibold hover:text-[#FF6B6B] transition-colors">Iniciar Sesión</button>
+                        <button onClick={() => onEnterApp('user')} className="bg-[#00BFFF] text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-[#00BFFF]/30 hover:opacity-90 transition-all transform hover:-translate-y-0.5">
+                        Únete Gratis
+                        </button>
+                    </div>
+                    <button className="md:hidden text-[#333333]" onClick={() => onEnterApp('user')}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    </button>
+                    </div>
+                </nav>
+
+                <header className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+                    <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-[#6A4C93]/10 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-72 h-72 bg-[#FF6B6B]/10 rounded-full blur-3xl"></div>
+
+                    <div className="container mx-auto px-6 max-w-7xl relative z-10">
+                    <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+                        <div className="lg:w-1/2 text-center lg:text-left animate-fade-in-up">
+                        <span className="inline-block py-1 px-3 rounded-full bg-[#FF6B6B]/10 text-[#FF6B6B] text-sm font-bold tracking-wider mb-4">🚀 REVOLUCIONANDO EL FEEDBACK</span>
+                        <h1 className="font-heading text-4xl lg:text-6xl font-extrabold leading-tight mb-6 text-[#333333]">
+                            ¡Bienvenido a Funappi! <br /> <span className="text-gradient">Tu Voz es Valor</span> <br /> <span className="text-2xl lg:text-4xl text-gray-400 font-semibold block mt-2">(Y Es Recompensada)</span>
+                        </h1>
+                        <h2 className="text-xl lg:text-2xl font-medium text-[#6A4C93] mb-6">
+                            Funappi: <strong>Opina. Influye. Gana.</strong>
+                        </h2>
+                        <p className="text-[#888888] text-lg mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
+                            La plataforma diseñada para transformar el diálogo entre personas y marcas, convirtiendo tu experiencia en crecimiento premiado.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                            <button onClick={() => onEnterApp('user')} className="bg-[#00BFFF] text-white text-lg px-8 py-4 rounded-full font-bold shadow-xl shadow-[#00BFFF]/30 hover:opacity-90 transition-all transform hover:-translate-y-1 w-full sm:w-auto text-center">
+                            ¡Empieza a Ganar con tu Opinión!
+                            </button>
+                            <a href="#como-funciona" className="bg-white text-[#333333] border border-gray-200 text-lg px-8 py-4 rounded-full font-bold hover:bg-gray-50 transition-all w-full sm:w-auto text-center flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#6A4C93]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Ver Video
+                            </a>
+                        </div>
+                        </div>
+                        <div className="lg:w-1/2 relative animate-fade-in-up" style={{animationDelay: '0.2s'}}>
+                        <div className="relative bg-gradient-brand rounded-3xl p-1 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-500">
+                            <div className="bg-white rounded-[20px] overflow-hidden relative min-h-[400px] flex items-center justify-center">
+                            <div className="text-center p-8">
+                                <div className="w-24 h-24 mx-auto bg-[#5BE2B3]/20 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                                <StarIcon className="w-12 h-12 text-[#5BE2B3]" fill="currentColor" />
+                                </div>
+                                <h3 className="font-heading text-2xl font-bold text-[#333333] mb-2">Feedback Recibido</h3>
+                                <p className="text-[#888888] mb-6">Tu opinión sobre "Restaurante El Sabor" ha generado:</p>
+                                <div className="bg-[#F8F8F8] p-4 rounded-xl border border-gray-200 inline-block">
+                                <span className="text-3xl font-bold text-[#6A4C93]">15% OFF</span>
+                                <span className="block text-xs text-[#888888] uppercase tracking-wide mt-1">En tu próxima visita</span>
+                                </div>
+                            </div>
+                            <div className="absolute top-10 right-10 bg-white p-3 rounded-xl shadow-lg animate-pulse"><span className="text-2xl">😊</span></div>
+                            <div className="absolute bottom-10 left-10 bg-white p-3 rounded-xl shadow-lg animate-pulse delay-75"><span className="text-2xl">⭐</span></div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                </header>
+
+                {/* 2. PROBLEMA / SOLUCIÓN */}
+                <section className="py-20 bg-white relative">
+                    <div className="container mx-auto px-6 max-w-4xl text-center">
+                    <h2 className="font-heading text-3xl lg:text-4xl font-bold text-[#6A4C93] mb-12">
+                        De la Queja Olvidada al <br /> <span className="text-[#5BE2B3] underline decoration-4 decoration-[#5BE2B3]/30">Crecimiento Premiado</span>
+                    </h2>
+                    <div className="bg-white p-8 lg:p-12 rounded-2xl shadow-glow border-l-8 border-[#FF6B6B] text-left relative overflow-hidden group hover:-translate-y-1 transition-transform">
+                        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-[#FF6B6B]/10 rounded-full"></div>
+                        <p className="text-xl lg:text-2xl text-[#333333] font-medium leading-relaxed italic relative z-10">
+                        "En lugar de que una mala experiencia termine en quejas olvidadas, <span className="font-bold text-[#6A4C93]">Funappi te empodera</span> para revertir esa situación, convirtiendo tu feedback en una palanca de transformación inmediata, crecimiento para la marca, y un <span class="bg-yellow-100 px-2">beneficio directo para ti</span>."
+                        </p>
+                    </div>
+                    </div>
+                </section>
+
+                {/* 3. CÓMO FUNCIONA */}
+                <section id="como-funciona" className="py-20 bg-[#F8F8F8]">
+                    <div className="container mx-auto px-6 max-w-7xl">
+                    <div className="text-center mb-16">
+                        <span className="text-[#00BFFF] font-bold tracking-wider uppercase text-sm">El Proceso</span>
+                        <h2 className="font-heading text-3xl lg:text-4xl font-bold text-[#333333] mt-2">Así Transformamos Tu Feedback</h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+                        <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 text-center group">
+                        <div className="w-20 h-20 mx-auto bg-[#FF6B6B]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#FF6B6B]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                        </div>
+                        <h3 className="font-heading text-xl font-bold text-[#333333] mb-3">1. Opina</h3>
+                        <p className="text-[#888888]">Recopila tu experiencia de uso de forma constructiva y verificable.</p>
+                        </div>
+                        <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 text-center group relative">
+                        <div className="w-20 h-20 mx-auto bg-[#6A4C93]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#6A4C93]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        </div>
+                        <h3 className="font-heading text-xl font-bold text-[#333333] mb-3">2. Transforma</h3>
+                        <p className="text-[#888888]">Tu aporte se convierte en una curva de valor ascendente que la marca utiliza para evolucionar.</p>
+                        </div>
+                        <div className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all border border-gray-100 text-center group">
+                        <div className="w-20 h-20 mx-auto bg-[#5BE2B3]/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#5BE2B3]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
+                        </div>
+                        <h3 className="font-heading text-xl font-bold text-[#333333] mb-3">3. Gana</h3>
+                        <p className="text-[#888888]">Si tu feedback es valioso, la marca te recompensa directamente.</p>
+                        </div>
+                    </div>
+                    </div>
+                </section>
+
+                {/* 4. IMPACTO Y RECOMPENSA */}
+                <section id="beneficios" className="py-20 bg-[#6A4C93] text-white relative overflow-hidden">
+                    <div className="container mx-auto px-6 max-w-7xl relative z-10">
+                    <div className="text-center mb-16">
+                        <h2 className="font-heading text-3xl lg:text-5xl font-extrabold mb-6">Tu Voz Resuena y te Abre Puertas Exclusivas</h2>
+                        <p className="text-purple-200 text-lg max-w-2xl mx-auto">No es solo un cupón, es empoderamiento. Únete al ecosistema donde tu criterio tiene peso.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
+                        <h3 className="font-bold text-xl mb-2 flex items-center gap-2"><span className="bg-[#5BE2B3] p-1 rounded text-white">💰</span> Recompensas Directas</h3>
+                        <p className="text-purple-100 leading-relaxed">Las empresas están listas para premiar tu esfuerzo y visión con beneficios tangibles.</p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
+                        <h3 className="font-bold text-xl mb-2 flex items-center gap-2"><span className="bg-[#FF6B6B] p-1 rounded text-white">🎤</span> Influencia Real</h3>
+                        <p className="text-purple-100 leading-relaxed">Accede a instancias exclusivas como focus groups y exposición con líderes de marca.</p>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm p-8 rounded-2xl border border-white/20 hover:bg-white/20 transition-colors">
+                        <h3 className="font-bold text-xl mb-2 flex items-center gap-2"><span className="bg-[#00BFFF] p-1 rounded text-white">🌍</span> Cambio Global</h3>
+                        <p className="text-purple-100 leading-relaxed">No solo mejoras productos, ayudas a mejorar el mundo cambiando la forma en que las marcas operan.</p>
+                        </div>
+                    </div>
+                    </div>
+                </section>
+
+                {/* 5. CIERRE (CTA FINAL) */}
+                <section className="py-20 bg-white text-center">
+                    <div className="container mx-auto px-6 max-w-4xl">
+                    <h2 className="font-heading text-3xl lg:text-4xl font-bold text-[#333333] mb-6">
+                        ¡Gracias por unirte a la plataforma donde el feedback es recompensado y el cambio comienza contigo!
+                    </h2>
+                    <div className="mt-10">
+                        <button onClick={() => onEnterApp('user')} className="inline-block bg-gradient-brand text-white text-xl lg:text-2xl px-10 py-5 rounded-full font-extrabold shadow-2xl hover:shadow-[#FF6B6B]/50 hover:scale-105 transition-all duration-300">
+                        ¡Quiero ser un Agente de Cambio con Funappi!
+                        </button>
+                    </div>
+                    </div>
+                </section>
+
+                {/* FOOTER */}
+                <footer className="bg-gray-50 border-t border-gray-200 pt-12 pb-8">
+                    <div className="container mx-auto px-6 max-w-7xl">
+                    <div className="flex flex-col md:flex-row justify-between items-center">
+                        <div className="mb-6 md:mb-0">
+                        <span className="font-heading font-bold text-2xl text-[#333333] flex items-center gap-2">
+                            <span className="text-[#6A4C93]">Fun</span>appi
+                        </span>
+                        <p className="text-sm text-gray-500 mt-2">© 2023 Funappi Inc. Todos los derechos reservados.</p>
+                        </div>
+                        <div className="flex gap-6">
+                        <a href="#" className="text-gray-500 hover:text-[#00BFFF] transition-colors">Privacidad</a>
+                        <a href="#" className="text-gray-500 hover:text-[#00BFFF] transition-colors">Términos</a>
+                        <a href="#" className="text-gray-500 hover:text-[#00BFFF] transition-colors">Soporte</a>
+                        </div>
+                    </div>
+                    </div>
+                </footer>
+                </div>
+            );
+        };
+
+        // --- APP MAIN COMPONENT ---
+        const App = () => {
+            const [view, setView] = useState('landing');
+            const [appData, setAppData] = useState(MOCK_DATA);
+            const [isProcessing, setIsProcessing] = useState(false);
+            const [selectedBusiness, setSelectedBusiness] = useState(null);
+            const [currentFocusGroup, setCurrentFocusGroup] = useState(null);
+            const [selectedMercado, setSelectedMercado] = useState(null);
+
+            const handleNewFeedback = (newFeedback) => setAppData(prev => ({ ...prev, feedback: [...prev.feedback, newFeedback] }));
+            
+            const handleBusinessReview = async (feedbackId, userId, quality, response, skipIncentive) => {
+                setIsProcessing(true);
+                setTimeout(() => {
+                setAppData(prev => {
+                    const updatedFeedback = prev.feedback.map(fb => fb.id === feedbackId ? { ...fb, status: 'resolved', userQualityRating: quality, response, incentive: skipIncentive ? null : 'Incentivo Generado (IA)' } : fb);
+                    return { ...prev, feedback: updatedFeedback };
+                });
+                setIsProcessing(false);
+                }, 1500);
+            };
+            
+            const handleSendChatMessage = (fgId, text) => {
+                const msg = { id: Date.now().toString(), userId: 'user1', text };
+                setAppData(prev => {
+                    const updatedGroups = prev.focusGroups.map(fg => fg.id === fgId ? { ...fg, chatHistory: [...fg.chatHistory, msg] } : fg);
+                    return { ...prev, focusGroups: updatedGroups };
+                });
+                setCurrentFocusGroup(prev => prev && prev.id === fgId ? { ...prev, chatHistory: [...prev.chatHistory, msg] } : prev);
+            };
+
+            const enterApp = (role) => {
+                setView(role);
+                window.scrollTo(0, 0);
+            };
+
+            if (view === 'landing') {
+                return (
+                <>
+                    <GlobalStyles />
+                    <LandingPage onEnterApp={enterApp} />
+                </>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-100 font-sans">
+                <GlobalStyles />
+                <header className="bg-white shadow-md sticky top-0 z-10">
+                    <div className="container mx-auto px-4 py-3 max-w-7xl flex flex-col sm:flex-row justify-between items-center">
+                    <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setView('landing')}>
+                        <FunappiLogo className="w-12 h-12" idSuffix="app-nav" />
+                        <div>
+                        <h1 className="text-3xl font-bold text-gray-800 tracking-tight">Funappi</h1>
+                        <p className="text-xs text-gray-500 font-medium tracking-wider uppercase">Constructive Feedback Loop</p>
+                        </div>
+                    </div>
+                    <div className="flex space-x-2 mt-2 sm:mt-0">
+                        <button onClick={() => setView('user')} className={`px-3 py-2 rounded transition-colors ${view === 'user' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>Consumidor</button>
+                        <button onClick={() => setView('focus')} className={`px-3 py-2 rounded transition-colors ${view === 'focus' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>Focus Group</button>
+                        <button onClick={() => setView('business')} className={`px-3 py-2 rounded transition-colors ${view === 'business' ? 'bg-gray-200 font-bold' : 'hover:bg-gray-100'}`}>Admin</button>
+                    </div>
+                    </div>
+                </header>
+                <main className="container mx-auto px-4 py-6 max-w-7xl">
+                    {view === 'user' && <UserDashboard currentUser={appData.users.user1} feedback={appData.feedback} businesses={appData.businesses} users={appData.users} onNewFeedback={handleNewFeedback} callGeminiAPI={callGeminiAPI} selectedMercado={selectedMercado} setSelectedMercado={setSelectedMercado} />}
+                    {view === 'business' && <BusinessDashboard selectedBusiness={selectedBusiness} setSelectedBusiness={setSelectedBusiness} businesses={appData.businesses} feedback={appData.feedback} users={appData.users} onReview={handleBusinessReview} callGeminiAPI={callGeminiAPI} isProcessing={isProcessing} />}
+                    {view === 'focus' && <FocusGroupDashboard focusGroups={appData.focusGroups} businesses={appData.businesses} users={appData.users} currentUser={appData.users.user1} currentFocusGroup={currentFocusGroup} onSelectGroup={setCurrentFocusGroup} onSendMessage={handleSendChatMessage} selectedMercado={selectedMercado} />}
+                </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
